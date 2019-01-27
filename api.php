@@ -1,12 +1,4 @@
 <?php
-/**************************************************
- * MKOnlinePlayer v2.4
- * 后台音乐数据抓取模块
- * 编写：mengkun(https://mkblog.cn)
- * 时间：2018-3-11
- * 特别感谢 @metowolf 提供的 Meting.php
- *************************************************/
-
 /************ ↓↓↓↓↓ 如果网易云音乐歌曲获取失效，请将你的 COOKIE 放到这儿 ↓↓↓↓↓ ***************/
 $netease_cookie = '';
 /************ ↑↑↑↑↑ 如果网易云音乐歌曲获取失效，请将你的 COOKIE 放到这儿 ↑↑↑↑↑ ***************/
@@ -25,34 +17,18 @@ $netease_cookie = '';
 define('HTTPS', false);    // 如果您的网站启用了https，请将此项置为“true”，如果你的网站未启用 https，建议将此项设置为“false”
 define('DEBUG', false);      // 是否开启调试模式，正常使用时请将此项置为“false”
 define('CACHE_PATH', 'cache/');     // 文件缓存目录,请确保该目录存在且有读写权限。如无需缓存，可将此行注释掉
-
-/*
- 如果遇到程序不能正常运行，请开启调试模式，然后访问 http://你的网站/音乐播放器地址/api.php ，进入服务器运行环境检测。
- 此外，开启调试模式后，程序将输出详细的运行错误信息，方便定位错误原因。
- 
- 因为调试模式下程序会输出服务器环境信息，为了您的服务器安全，正常使用时请务必关闭调试。
-*/
-
-
-
 /*****************************************************************************************************/
 if(!defined('DEBUG') || DEBUG !== true) error_reporting(0); // 屏蔽服务器错误
-
 require_once('plugns/Meting.php');
-
 use Metowolf\Meting;
-
 $source = getParam('source', 'netease');  // 歌曲源
 $API = new Meting($source);
-
 $API->format(true); // 启用格式化功能
-
 if($source == 'kugou' || $source == 'baidu') {
     define('NO_HTTPS', true);        // 酷狗和百度音乐源暂不支持 https
 } elseif(($source == 'netease') && $netease_cookie) {
     $API->cookie($netease_cookie);    // 解决网易云 Cookie 失效
 }
-
 // 没有缓存文件夹则创建
 if(defined('CACHE_PATH') && !is_dir(CACHE_PATH)) createFolders(CACHE_PATH);
 
@@ -146,10 +122,9 @@ switch($types)   // 根据请求的 Api，执行相应操作
             'page' => $pages, 
             'limit' => $limit
         ]);
-        
+
         echojson($data);
         break;
-        
     default:
         echo '<!doctype html><html><head><meta charset="utf-8"><title>信息</title><style>* {font-family: microsoft yahei}</style></head><body> <h2>MKOnlinePlayer</h2><h3>Github: https://github.com/mengkunsoft/MKOnlineMusicPlayer</h3><br>';
         if(!defined('DEBUG') || DEBUG !== true) {   // 非调试模式

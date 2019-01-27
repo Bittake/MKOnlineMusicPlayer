@@ -4,14 +4,11 @@
  * 编写：mengkun(http://mkblog.cn)
  * 时间：2017-9-13
  *************************************************/
- 
 var lyricArea = $("#lyric");    // 歌词显示容器
-
 // 在歌词区显示提示语（如歌词加载中、无歌词等）
 function lyricTip(str) {
     lyricArea.html("<li class='lyric-tip'>"+str+"</li>");     // 显示内容
 }
-
 // 歌曲加载完后的回调函数
 // 参数：歌词源文件
 function lyricCallback(str, id) {
@@ -20,10 +17,9 @@ function lyricCallback(str, id) {
     rem.lyric = parseLyric(str);    // 解析获取到的歌词
     
     if(rem.lyric === '') {
-        lyricTip('没有歌词');
+        lyricTip('似乎没有歌词');
         return false;
     }
-    
     lyricArea.html('');     // 清空歌词区域的内容
     lyricArea.scrollTop(0);    // 滚动到顶部
     
@@ -51,10 +47,8 @@ function refreshLyric(time) {
         if(k >= time) break;
         i = k;      // 记录上一句的
     }
-    
     scrollLyric(i);
 }
-
 // 滚动歌词到指定句
 // 参数：当前播放时间（单位：秒）
 function scrollLyric(time) {
@@ -77,9 +71,7 @@ function scrollLyric(time) {
     
     var scroll = (lyricArea.children().height() * i) - ($(".lyric").height() / 2); 
     lyricArea.stop().animate({scrollTop: scroll}, 1000);  // 平滑滚动到当前歌词位置(更改这个数值可以改变歌词滚动速度，单位：毫秒)
-    
 }
-
 // 解析歌词
 // 这一函数来自 https://github.com/TivonJJ/html5-music-player
 // 参数：原始歌词文件

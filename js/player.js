@@ -14,38 +14,29 @@ var mkPlayer = {
     coverbg: true,      // 是否开启封面背景(true/false) *开启后会有些卡
     mcoverbg: true,     // 是否开启[移动端]封面背景(true/false)
     dotshine: true,    // 是否开启播放进度条的小点闪动效果[不支持IE](true/false) *开启后会有些卡
-    mdotshine: false,   // 是否开启[移动端]播放进度条的小点闪动效果[不支持IE](true/false)
+    mdotshine: true,   // 是否开启[移动端]播放进度条的小点闪动效果[不支持IE](true/false)
     volume: 0.6,        // 默认音量值(0~1之间)
     version: "v2.41",    // 播放器当前版本号(仅供调试)
     debug: false   // 是否开启调试模式(true/false)
 };
-
-
-
 /*******************************************************
  * 以下内容是播放器核心文件，不建议进行修改，否则可能导致播放器无法正常使用!
  * 
  * 哈哈，吓唬你的！想改就改呗！不过建议修改之前先【备份】,要不然改坏了弄不好了。
  ******************************************************/
-
 // 存储全局变量
 var rem = [];
-
 // 音频错误处理函数
 function audioErr() {
     // 没播放过，直接跳过
     if(rem.playlist === undefined) return true;
-    
     if(rem.errCount > 10) { // 连续播放失败的歌曲过多
         layer.msg('似乎出了点问题~播放已停止');
-        rem.errCount = 0;
     } else {
         rem.errCount++;     // 记录连续播放失败的歌曲数目
-        layer.msg('当前歌曲播放失败，自动播放下一首');
-        nextMusic();    // 切换下一首歌
+        layer.msg('当前歌曲播放失败！');
     } 
 }
-
 // 点击暂停按钮的事件
 function pause() {
     if(rem.paused === false) {  // 之前是播放状态
@@ -65,7 +56,6 @@ function pause() {
         rem.audio[0].play();
     }
 }
-
 // 循环顺序
 function orderChange() {
     var orderDiv = $(".btn-order");
@@ -93,7 +83,6 @@ function orderChange() {
             rem.order = 3;
     }
 }
-
 // 播放
 function audioPlay() {
     rem.paused = false;     // 更新状态（未暂停）
@@ -103,7 +92,6 @@ function audioPlay() {
     if((mkPlayer.dotshine === true && !rem.isMobile) || (mkPlayer.mdotshine === true && rem.isMobile)) {
         $("#music-progress .mkpgb-dot").addClass("dot-move");   // 小点闪烁效果
     }
-    
     var music = musicList[rem.playlist].item[rem.playid];   // 获取当前播放的歌曲信息
     var msg = " 正在播放: " + music.name + " - " + music.artist;  // 改变浏览器标题
     
@@ -131,11 +119,8 @@ function audioPause() {
     rem.paused = true;      // 更新状态（已暂停）
     
     $(".list-playing").removeClass("list-playing");        // 移除其它的正在播放
-    
     $(".btn-play").removeClass("btn-state-paused");     // 取消暂停
-    
     $("#music-progress .dot-move").removeClass("dot-move");   // 小点闪烁效果
-
      // 清除定时器
     if (rem.titflash !== undefined ) 
     {

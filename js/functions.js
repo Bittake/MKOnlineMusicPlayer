@@ -3,6 +3,7 @@
  * 封装函数及UI交互模块
  * 编写：mengkun(https://mkblog.cn)
  * 时间：2018-3-11
+ * <!-- 加入收藏功能，有什么问题欢迎探讨 www.xptt.com  -->
  *************************************************/
 // 判断是否是移动设备
 var isMobile = {  
@@ -23,11 +24,7 @@ var isMobile = {
     }
 };
 
-$(function(){
-    if(mkPlayer.debug) {
-        console.warn('播放器调试模式已开启，正常使用时请在 js/player.js 中按说明关闭调试模式');
-    }
-    
+$(function(){    
     rem.isMobile = isMobile.any();      // 判断是否是移动设备
     rem.webTitle = document.title;      // 记录页面原本的标题
     rem.errCount = 0;                   // 连续播放失败的歌曲数归零
@@ -63,12 +60,16 @@ $(function(){
             break;
             case "search":  // 搜索
                 searchBox();
+                loadList(0);
             break;
             
             case "playing": // 正在播放
                 loadList(1); // 显示正在播放列表
             break;
-            
+            case "clear":
+					$.ajax({method:"get",url:"./clear.php"});
+					layer.msg('清理成功！');
+			break;
             case "sheet":   // 播放列表
                 dataBox("sheet");    // 在主界面显示出音乐专辑
             break;
@@ -105,6 +106,7 @@ $(function(){
         // 还没有追加菜单则加上菜单
         if(!$(this).data("loadmenu")) {
             var target = $(this).find(".music-name");
+            if(rem.dislist == 3) { //判断列表式收藏显示删除图标
             var html = '<span class="music-name-cult">' + 
             target.html() + 
             '</span>' +
@@ -112,14 +114,26 @@ $(function(){
                 '<span class="list-icon icon-play" data-function="play" title="点击播放这首歌"></span>' +
                 '<span class="list-icon icon-download" data-function="download" title="点击下载这首歌"></span>' +
                 '<span class="list-icon icon-share" data-function="share" title="点击分享这首歌"></span>' +
+                '<span class="list-icon icon-addlist" data-function="addlist" title="添加到收藏夹收藏列表"></span>' +
+                '<span class="list-icon icon-dellist" data-function="dellist" title="删除这首歌"></span>' +
+            '</div>';}else{
+                var html = '<span class="music-name-cult">' + 
+            target.html() + 
+            '</span>' +
+            '<div class="list-menu" data-no="' + num + '">' +
+                '<span class="list-icon icon-play" data-function="play" title="点击播放这首歌"></span>' +
+                '<span class="list-icon icon-download" data-function="download" title="点击下载这首歌"></span>' +
+                '<span class="list-icon icon-share" data-function="share" title="点击分享这首歌"></span>' +
+                '<span class="list-icon icon-addlist" data-function="addlist" title="添加到收藏夹收藏列表"></span>' +
             '</div>';
+            }
             target.html(html);
             $(this).data("loadmenu", true);
         }
     });
     
     // 列表中的菜单点击
-    $(".music-list").on("click",".icon-play,.icon-download,.icon-share", function() {
+    $(".music-list").on("click",".icon-play,.icon-download,.icon-share,.icon-addlist,.icon-dellist", function() {
         var num = parseInt($(this).parent().data("no"));
         if(isNaN(num)) return false;
         switch($(this).data("function")) {
@@ -132,6 +146,14 @@ $(function(){
             case "share":   // 分享
                 // ajax 请求数据
                 ajaxUrl(musicList[rem.dislist].item[num], ajaxShare);
+            break;
+            case "addlist":   // 添加到收藏夹列表
+                // ajax 请求数据
+                ajaxUrl(musicList[rem.dislist].item[num], ajaxaddlist);
+            break;
+            case "dellist":   // 删除这首歌
+                // ajax 请求数据
+                ajaxUrl(musicList[rem.dislist].item[num], ajaxdellist);
             break;
         }
         return true;
@@ -290,7 +312,9 @@ function musicInfo(list, index) {
     
     tempStr += '<br><span class="info-title">操作：</span>' + 
     '<span class="info-btn" onclick="thisDownload(this)" data-list="' + list + '" data-index="' + index + '">下载</span>' + 
-    '<span style="margin-left: 10px" class="info-btn" onclick="thisShare(this)" data-list="' + list + '" data-index="' + index + '">外链</span>';
+    '<span style="margin-left: 15px" class="info-btn" onclick="thisShare(this)" data-list="' + list + '" data-index="' + index + '">外链</span>' +
+    '<span style="margin-left: 10px" class="info-btn" onclick="thisaddlist(this)" data-list="' + list + '" data-index="' + index + '">添加收藏</span>' +
+    '<span style="margin-left: 10px" class="info-btn" onclick="thisdellist(this)" data-list="' + list + '" data-index="' + index + '">删除这首歌</span>';
     
     layer.open({
         type: 0,
@@ -374,6 +398,16 @@ function thisShare(obj) {
     ajaxUrl(musicList[$(obj).data("list")].item[$(obj).data("index")], ajaxShare);
 }
 
+// 正在播放的这首歌添加到列表
+function thisaddlist(obj) {
+    ajaxUrl(musicList[$(obj).data("list")].item[$(obj).data("index")], ajaxaddlist);
+}
+
+// 删除这首歌
+function thisdellist(obj) {
+    ajaxUrl(musicList[$(obj).data("list")].item[$(obj).data("index")], ajaxdellist);
+}
+
 // 下载歌曲
 // 参数：包含歌曲信息的数组
 function download(music) {
@@ -426,6 +460,22 @@ function ajaxShare(music) {
         title: '歌曲外链分享'
         ,content: tmpHtml
     });
+}
+
+// 参数：包含音乐信息的数组添加到收藏夹列表
+function ajaxaddlist(music) {
+    if(music.url == 'err' || music.url == "" || music.url == null) {
+        layer.msg('这首歌不支持添加到列表');
+        return;
+    }
+    addlist(music);  // 添加到收藏夹列表
+    layer.msg('添加成功'); 
+}
+
+// 参数：从收藏夹列表删除包含音乐信息的数组
+function ajaxdellist(music) {
+    dellist(music);  // 从收藏夹列表删除
+    layer.msg('删除成功'); 
 }
 
 // 改变右侧封面图像
@@ -519,7 +569,7 @@ function loadList(list) {
         }
         
         // 列表加载完成后的处理
-        if(list == 1 || list == 2) {    // 历史记录和正在播放列表允许清空
+        if(list == 1 || list == 2 || list == 3) {    // 历史记录和正在播放列表允许清空
             addListbar("clear");    // 清空列表
         }
         
@@ -589,7 +639,9 @@ function addListbar(types) {
         break;
         
         case "nodata":  // 列表中没有内容
-            html = '<div class="list-item text-center" id="list-foot">可能是个假列表，什么也没有</div>';
+            html = '<div class="list-item text-center" id="list-foot">没有数据，去播放列表或则搜索歌曲吧。</div>';
+            //dataBox("sheet"); //跳到播放列表
+            //layer.msg('空数据，开始选歌或则搜歌吧！'); //提示跳转
         break;
         
         case "clear":   // 清空列表
@@ -758,6 +810,45 @@ function addHis(music) {
     playerSavedata('his', musicList[2].item);  // 保存播放历史列表
 }
 
+// 将当前歌曲加入收藏夹列表
+// 参数：要添加的音乐
+function addlist(music) {
+    //if(rem.playlist == 3) return true;  // 在播放“收藏夹列表”列表则不作改变
+    
+    if(musicList[3].item.length > 500) musicList[3].item.length = 499; // 限定播放历史最多是 500 首
+    
+    if(music.id !== undefined && music.id !== '') {
+        // 检查历史数据中是否有这首歌，如果有则提至前面
+        for(var i=0; i<musicList[3].item.length; i++) {
+            if(musicList[3].item[i].id == music.id && musicList[3].item[i].source == music.source) {
+                musicList[3].item.splice(i, 1); // 先删除相同的
+                i = musicList[3].item.length;   // 找到了，跳出循环
+            }
+        }
+    }
+    
+    // 添加到列表末尾
+    musicList[3].item.push(music);
+    
+    playerSavedata('zdy', musicList[3].item);  // 保存播放收藏夹列表
+}
+
+// 参数：要删除的音乐
+function dellist(music) {
+    if(music.id !== undefined && music.id !== '') {
+        // 检查历史数据中是否有这首歌，如果有则提至前面
+        for(var i=0; i<musicList[3].item.length; i++) {
+            if(musicList[3].item[i].id == music.id && musicList[3].item[i].source == music.source) {
+                musicList[3].item.splice(i, 1); // 先删除相同的
+                i = musicList[3].item.length;   // 找到了，跳出循环
+            }
+        }
+    }
+    playerSavedata('zdy', musicList[3].item);  // 保存播放收藏夹列表
+    refreshList();
+    loadList(3); //刷新列表 重新跳到收藏列表
+}
+
 // 初始化播放列表
 function initList() {
     // 登陆过，那就读取出用户的歌单，并追加到系统歌单的后面
@@ -788,8 +879,15 @@ function initList() {
                 musicList[2].item = tmp_item;
             }
             
-         // 列表不是用户列表，并且信息为空，需要ajax读取列表
-        }else if(!musicList[i].creatorID && (musicList[i].item == undefined || (i>2 && musicList[i].item.length == 0))) {   
+        } else if(i == 3) { // 收藏夹记录列表
+            // 读取收藏夹记录
+            var tmp_item = playerReaddata('zdy');
+            if(tmp_item) {
+                musicList[3].item = tmp_item;
+            }
+       
+        }// 列表不是用户列表，并且信息为空，需要ajax读取列表
+        else if(!musicList[i].creatorID && (musicList[i].item == undefined || (i>3 && musicList[i].item.length == 0))) {   
             musicList[i].item = [];
             if(musicList[i].id) {   // 列表ID已定义
                 // ajax获取列表信息
@@ -810,7 +908,7 @@ function initList() {
     }
     
     // 首页显示默认列表
-    if(mkPlayer.defaultlist >= musicList.length) mkPlayer.defaultlist = 1;  // 超出范围，显示正在播放列表
+    if(mkPlayer.defaultlist >= musicList.length) mkPlayer.defaultlist = 3;  // 超出范围，显示正在播放列表
     
     if(musicList[mkPlayer.defaultlist].isloading !== true)  loadList(mkPlayer.defaultlist);
     
@@ -844,6 +942,8 @@ function clearDislist() {
         $(".sheet-item[data-no='1'] .sheet-cover").attr('src', 'images/player_cover.png');    // 恢复正在播放的封面
     } else if(rem.dislist == 2) {   // 播放记录
         playerSavedata('his', '');  // 清空本地记录
+    } else if(rem.dislist == 3) {   // 收藏夹列表记录
+        playerSavedata('zdy', '');  // 清空本地记录
     }
     layer.msg('列表已被清空');
     dataBox("sheet");    // 在主界面显示出音乐专辑
