@@ -415,7 +415,7 @@ function download(music) {
         layer.msg('这首歌不支持下载');
         return;
     }
-    openDownloadDialog(music.url, music.name + ' - ' + music.artist);
+    openDownloadDialog("./d.php?u="+music.url, music.name + ' - ' + music.artist);
 }
 
 /**
